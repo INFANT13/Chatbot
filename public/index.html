@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ChatVibe - Premium Local AI Chatbot</title>
+  <meta name="description" content="A feature-rich, high-performance local AI chatbot with speech-to-text, text-to-speech, custom personas, and glassmorphic aesthetics.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Prism Code Highlighting Theme -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Glowing Blobs -->
+  <div class="glow-bg-blob blob-1"></div>
+  <div class="glow-bg-blob blob-2"></div>
+  <div class="glow-bg-blob blob-3"></div>
+
+  <div class="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo">
+            <i data-lucide="zap"></i>
+          </div>
+          <h1>ChatVibe</h1>
+        </div>
+        <button class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close sidebar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <button class="new-chat-btn" id="new-chat-btn">
+        <i data-lucide="plus"></i>
+        <span>New Chat</span>
+      </button>
+
+      <div class="sidebar-scrollable">
+        <div class="history-section">
+          <h2 class="section-title">Conversations</h2>
+          <div class="conversation-list" id="conversation-list">
+            <!-- Dynamically populated conversations -->
+            <div class="history-skeleton">
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="footer-action-btn" id="open-settings-btn" title="Settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </button>
+        <div class="footer-disclaimer">
+          <p>Running locally on Port 3000</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT INTERFACE -->
+    <main class="chat-main">
+      
+      <!-- TOP BAR -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Open sidebar">
+            <i data-lucide="menu"></i>
+          </button>
+          
+          <div class="active-persona-info">
+            <div class="persona-avatar-container">
+              <div class="persona-avatar" id="header-persona-avatar">
+                <i data-lucide="sparkles"></i>
+              </div>
+              <span class="status-indicator online"></span>
+            </div>
+            <div>
+              <h2 class="persona-name" id="header-persona-name">Aether</h2>
+              <p class="persona-desc" id="header-persona-desc">Your general AI assistant</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Voice Output Toggle -->
+          <button class="header-action-btn" id="toggle-speech-output" title="Toggle Text-to-Speech (Voice Output)">
+            <i data-lucide="volume-2" id="speech-output-icon"></i>
+          </button>
+          
+          <!-- Clear chat -->
+          <button class="header-action-btn" id="clear-chat-btn" title="Clear Current Chat">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CHAT MESSAGE DISPLAY -->
+      <section class="chat-history-container" id="chat-history-container">
+        <!-- Messages will be rendered here dynamically -->
+        
+        <!-- Welcome Screen -->
+        <div class="welcome-container" id="welcome-container">
+          <div class="welcome-icon">
+            <i data-lucide="bot"></i>
+          </div>
+          <h2>Welcome to ChatVibe</h2>
+          <p class="welcome-tagline">A premium, glassmorphic chatbot running on your local machine. Choose a persona below and start conversing.</p>
+          
+          <div class="persona-grid">
+            <div class="persona-card active" data-persona="aether">
+              <div class="persona-card-icon c-aether"><i data-lucide="sparkles"></i></div>
+              <h3>Aether</h3>
+              <p>Balanced, friendly, and structured responses.</p>
+            </div>
+            <div class="persona-card" data-persona="codex">
+              <div class="persona-card-icon c-codex"><i data-lucide="code-2"></i></div>
+              <h3>Codex</h3>
+              <p>Expert software developer for code generation and debugging.</p>
+            </div>
+            <div class="persona-card" data-persona="sophia">
+              <div class="persona-card-icon c-sophia"><i data-lucide="compass"></i></div>
+              <h3>Sophia</h3>
+              <p>Deep philosophical explorer for reflective thinking.</p>
+            </div>
+            <div class="persona-card" data-persona="spark">
+              <div class="persona-card-icon c-spark"><i data-lucide="wand-2"></i></div>
+              <h3>Spark</h3>
+              <p>Creative storyteller and enthusiastic conversationalist.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INPUT PANEL -->
+      <footer class="chat-input-panel">
+        <form class="chat-input-form" id="chat-input-form">
+          <div class="input-wrapper">
+            <!-- Speech Input Indicator/Button -->
+            <button type="button" class="input-action-btn" id="toggle-speech-input" title="Speech-to-Text Input">
+              <i data-lucide="mic" id="mic-icon"></i>
+            </button>
+            
+            <textarea 
+              id="chat-textarea" 
+              placeholder="Message ChatVibe..." 
+              rows="1" 
+              required
+              aria-label="Chat input message text"
+            ></textarea>
+            
+            <button type="submit" class="send-message-btn" id="send-message-btn" title="Send message">
+              <i data-lucide="send"></i>
+            </button>
+          </div>
+          <div class="input-footer-note">
+            <span>Press Enter to send, Shift + Enter for new line.</span>
+          </div>
+        </form>
+      </footer>
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-backdrop" id="settings-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="modal-close-btn" id="close-settings-btn" aria-label="Close settings">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- API Keys Section -->
+          <div class="settings-group">
+            <h3>API Configurations</h3>
+            <div class="setting-field">
+              <label for="settings-api-key">Gemini API Key</label>
+              <div class="api-key-input-container">
+                <input 
+                  type="password" 
+                  id="settings-api-key" 
+                  placeholder="Enter your Gemini API key..."
+                  autocomplete="off"
+                >
+                <button type="button" class="toggle-password-btn" id="toggle-api-key-visibility">
+                  <i data-lucide="eye"></i>
+                </button>
+              </div>
+              <p class="field-help">If empty, the server will stream realistic responses from a localized Mock engine. Your API key is stored locally in your browser.</p>
+            </div>
+          </div>
+
+          <!-- Model Config Section -->
+          <div class="settings-group">
+            <h3>Generation Configuration</h3>
+            
+            <div class="setting-field">
+              <label for="settings-persona">Default Persona</label>
+              <select id="settings-persona">
+                <option value="aether">Aether - General Assistant</option>
+                <option value="codex">Codex - Software Developer</option>
+                <option value="sophia">Sophia - Philosophical Thinker</option>
+                <option value="spark">Spark - Storyteller / Creative</option>
+              </select>
+            </div>
+
+            <div class="setting-field">
+              <div class="slider-header">
+                <label for="settings-temperature">Temperature</label>
+                <span class="slider-value" id="temperature-value-display">0.7</span>
+              </div>
+              <input 
+                type="range" 
+                id="settings-temperature" 
+                min="0.0" 
+                max="1.5" 
+                step="0.1" 
+                value="0.7"
+              >
+              <p class="field-help">Higher values yield more creative responses, lower values make responses more factual and focused.</p>
+            </div>
+          </div>
+          
+          <!-- Local History Section -->
+          <div class="settings-group">
+            <h3>Local Data</h3>
+            <div class="setting-row">
+              <div>
+                <h4>Export History</h4>
+                <p class="field-help text-small">Download your conversation history as a JSON file.</p>
+              </div>
+              <button class="btn-secondary" id="export-history-btn">Export</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" id="reset-settings-btn">Reset Defaults</button>
+          <button class="btn-primary" id="save-settings-btn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- External CDNs -->
+  <!-- Marked for markdown parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <!-- Prism for syntax highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

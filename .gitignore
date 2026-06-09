@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Local configuration and environment variables
+.env
+.env.local
+
+# Database/conversations logs
+conversations.json
+
+# OS files
+.DS_Store
+Thumbs.db

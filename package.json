@@ -1,0 +1,14 @@
+{
+  "name": "local-chatbot",
+  "version": "1.0.0",
+  "description": "A premium local chatbot web application with streaming, voice recognition, and persona options.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
