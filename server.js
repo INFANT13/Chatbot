@@ -27,7 +27,9 @@ if (fs.existsSync(envPath)) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CONVERSATIONS_FILE = path.join(__dirname, 'conversations.json');
+const CONVERSATIONS_FILE = process.env.NETLIFY 
+  ? '/tmp/conversations.json'
+  : path.join(__dirname, 'conversations.json');
 
 app.use(express.json());
 // Serve static files from 'public' folder
@@ -399,7 +401,11 @@ app.delete('/api/conversations/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Chatbot Server running at http://localhost:${PORT}`);
-});
+// Start Server if not running on Netlify
+if (!process.env.NETLIFY) {
+  app.listen(PORT, () => {
+    console.log(`Chatbot Server running at http://localhost:${PORT}`);
+  });
+}
+
+export default app;
