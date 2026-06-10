@@ -414,8 +414,10 @@ app.delete('/api/conversations/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// Start Server if not running on Netlify
-if (!process.env.NETLIFY) {
+// Start Server if not running in a serverless environment (Netlify / AWS Lambda)
+const isServerless = process.env.NETLIFY || process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV;
+
+if (!isServerless) {
   app.listen(PORT, () => {
     console.log(`Chatbot Server running at http://localhost:${PORT}`);
   });
