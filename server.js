@@ -26,7 +26,7 @@ if (fs.existsSync(envPath)) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CONVERSATIONS_FILE = process.env.NETLIFY 
+const CONVERSATIONS_FILE = (process.env.NETLIFY || process.env.LAMBDA_TASK_ROOT)
   ? '/tmp/conversations.json'
   : path.join(__dirname, 'conversations.json');
 
