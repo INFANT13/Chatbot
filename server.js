@@ -277,8 +277,8 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: msg.content }]
     }));
 
-    // Target the streamGenerateContent API
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${activeKey}`;
+    // Use non-streaming generateContent for serverless compatibility
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
 
     const apiResponse = await fetch(geminiUrl, {
       method: 'POST',
@@ -299,48 +299,30 @@ app.post('/api/chat', async (req, res) => {
     if (!apiResponse.ok) {
       const errText = await apiResponse.text();
       console.error('Gemini API request failed:', errText);
-      res.write(`data: ${JSON.stringify({ error: `Gemini API Error: ${apiResponse.statusText}` })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: `Gemini API Error: ${apiResponse.statusText}. ${errText}` })}\n\n`);
       res.write('data: [DONE]\n\n');
       res.end();
       return;
     }
 
-    const reader = apiResponse.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
+    const result = await apiResponse.json();
+    
+    // Extract the full response text from Gemini's response
+    const fullText = result.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+    
+    if (fullText) {
+      res.write(`data: ${JSON.stringify({ text: fullText })}\n\n`);
+    } else {
+      // If no text was found, check for errors or blocked content
+      const blockReason = result.candidates?.[0]?.finishReason;
+      const promptFeedback = result.promptFeedback?.blockReason;
       
-      // Save the last line if it is incomplete
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        // Gemini streams responses as JSON lines, sometimes prefixed with comma or inside brackets
-        // We need to parse individual chunks
-        // Example chunk: {"candidates": [{"content": {"parts": [{"text": "hello"}]}}]}
-        // Wait, streamGenerateContent returns a JSON array of structures, or objects separated by newlines
-        // Let's strip the leading comma or bracket if any, or parse objects directly
-        let cleanLine = trimmed;
-        if (cleanLine.startsWith(',')) cleanLine = cleanLine.substring(1).trim();
-        if (cleanLine.startsWith('[') || cleanLine.startsWith(']')) continue;
-
-        try {
-          const parsed = JSON.parse(cleanLine);
-          const textChunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (textChunk) {
-            res.write(`data: ${JSON.stringify({ text: textChunk })}\n\n`);
-          }
-        } catch (e) {
-          // Incomplete JSON or other separator lines, we skip or accumulate
-        }
+      if (promptFeedback) {
+        res.write(`data: ${JSON.stringify({ error: `Response blocked: ${promptFeedback}` })}\n\n`);
+      } else if (blockReason && blockReason !== 'STOP') {
+        res.write(`data: ${JSON.stringify({ error: `Response ended: ${blockReason}` })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ error: 'No response generated. Please try again.' })}\n\n`);
       }
     }
 
@@ -348,7 +330,7 @@ app.post('/api/chat', async (req, res) => {
     res.end();
 
   } catch (error) {
-    console.error('Error in streaming Gemini API:', error);
+    console.error('Error calling Gemini API:', error);
     res.write(`data: ${JSON.stringify({ error: `Internal Server Error: ${error.message}` })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
