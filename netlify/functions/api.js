@@ -1,4 +1,7 @@
-import serverless from 'serverless-http';
-import app from '../../server.js';
-
-export const handler = serverless(app);
+export const handler = async (event, context) => {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: "Hello from Netlify Functions!" })
+  };
+};
