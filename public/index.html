@@ -66,7 +66,7 @@
           <span>Settings</span>
         </button>
         <div class="footer-disclaimer">
-          <p>Running locally on Port 3000</p>
+          <p id="footer-connection-status">Running locally on Port 3000</p>
         </div>
       </div>
     </aside>
@@ -118,7 +118,7 @@
             <i data-lucide="bot"></i>
           </div>
           <h2>Welcome to ChatVibe</h2>
-          <p class="welcome-tagline">A premium, glassmorphic chatbot running on your local machine. Choose a persona below and start conversing.</p>
+          <p class="welcome-tagline" id="welcome-tagline">A premium, glassmorphic chatbot running on your local machine. Choose a persona below and start conversing.</p>
           
           <div class="persona-grid">
             <div class="persona-card active" data-persona="aether">
@@ -201,6 +201,17 @@
                 </button>
               </div>
               <p class="field-help">If empty, the server will stream realistic responses from a localized Mock engine. Your API key is stored locally in your browser.</p>
+            </div>
+            
+            <div class="setting-field">
+              <label for="settings-api-url">API Server URL</label>
+              <input 
+                type="url" 
+                id="settings-api-url" 
+                placeholder="e.g. http://localhost:3000"
+                autocomplete="off"
+              >
+              <p class="field-help">The base URL of your ChatVibe backend API. Leave blank to use the current host.</p>
             </div>
           </div>
 

@@ -3,9 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Resolve directory paths
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Resolve directory paths safely for local and serverless (bundled) environments
+const __dirname = process.cwd();
 
 // Load environmental variables manually from .env
 const envPath = path.join(__dirname, '.env');
@@ -30,6 +29,20 @@ const PORT = process.env.PORT || 3000;
 const CONVERSATIONS_FILE = process.env.NETLIFY 
   ? '/tmp/conversations.json'
   : path.join(__dirname, 'conversations.json');
+
+// Enable CORS middleware
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(express.json());
 // Serve static files from 'public' folder

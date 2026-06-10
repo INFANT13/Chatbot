@@ -11,6 +11,7 @@ let state = {
   temperature: 0.7,
   isSpeechOutputEnabled: false,
   isRecording: false,
+  apiBaseUrl: '',
   messages: []
 };
 
@@ -27,11 +28,14 @@ const el = {
   saveSettingsBtn: document.getElementById('save-settings-btn'),
   resetSettingsBtn: document.getElementById('reset-settings-btn'),
   apiKeyInput: document.getElementById('settings-api-key'),
+  apiUrlInput: document.getElementById('settings-api-url'),
   toggleApiKeyVisibility: document.getElementById('toggle-api-key-visibility'),
   settingsPersona: document.getElementById('settings-persona'),
   settingsTemp: document.getElementById('settings-temperature'),
   tempDisplay: document.getElementById('temperature-value-display'),
   exportHistoryBtn: document.getElementById('export-history-btn'),
+  footerConnectionStatus: document.getElementById('footer-connection-status'),
+  welcomeTagline: document.getElementById('welcome-tagline'),
   
   // Header
   headerPersonaAvatar: document.getElementById('header-persona-avatar'),
@@ -112,27 +116,83 @@ function loadLocalConfig() {
   state.temperature = parseFloat(localStorage.getItem('cv_temp')) || 0.7;
   state.activePersona = localStorage.getItem('cv_default_persona') || 'aether';
   state.isSpeechOutputEnabled = localStorage.getItem('cv_speech_output') === 'true';
+  state.apiBaseUrl = localStorage.getItem('cv_api_base_url') || '';
 
   // Apply visual configurations to settings form
   el.apiKeyInput.value = state.apiKey;
+  el.apiUrlInput.value = state.apiBaseUrl;
   el.settingsTemp.value = state.temperature;
   el.tempDisplay.textContent = state.temperature;
   el.settingsPersona.value = state.activePersona;
   
   updateSpeechOutputButton();
   updatePersonaVisuals(state.activePersona);
+  updateConnectionStatus();
 }
 
 function saveLocalConfig() {
   state.apiKey = el.apiKeyInput.value.trim();
   state.temperature = parseFloat(el.settingsTemp.value);
   state.activePersona = el.settingsPersona.value;
+  state.apiBaseUrl = el.apiUrlInput.value.trim();
   
   localStorage.setItem('cv_api_key', state.apiKey);
   localStorage.setItem('cv_temp', state.temperature.toString());
   localStorage.setItem('cv_default_persona', state.activePersona);
+  localStorage.setItem('cv_api_base_url', state.apiBaseUrl);
   
   updatePersonaVisuals(state.activePersona);
+  updateConnectionStatus();
+}
+
+function getApiUrl(endpoint) {
+  let base = state.apiBaseUrl ? state.apiBaseUrl.trim() : '';
+  
+  // If running via file:// protocol and no API URL is specified, default to http://localhost:3000
+  if (!base && window.location.protocol === 'file:') {
+    base = 'http://localhost:3000';
+  }
+  
+  if (!base) return endpoint;
+  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${cleanBase}${cleanEndpoint}`;
+}
+
+function updateConnectionStatus() {
+  let apiHost = '';
+  let usingDefaultFileFallback = false;
+  
+  if (state.apiBaseUrl) {
+    try {
+      apiHost = new URL(state.apiBaseUrl).host;
+    } catch (e) {
+      apiHost = state.apiBaseUrl;
+    }
+  } else if (window.location.protocol === 'file:') {
+    apiHost = 'localhost:3000';
+    usingDefaultFileFallback = true;
+  }
+
+  if (apiHost) {
+    if (el.footerConnectionStatus) {
+      el.footerConnectionStatus.textContent = usingDefaultFileFallback 
+        ? `API Host: localhost:3000 (Local Server)`
+        : `API Host: ${apiHost}`;
+    }
+    if (el.welcomeTagline) {
+      el.welcomeTagline.textContent = `A premium, glassmorphic chatbot interface connected to your backend server. Choose a persona below and start conversing.`;
+    }
+  } else {
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+    if (isLocal) {
+      if (el.footerConnectionStatus) el.footerConnectionStatus.textContent = `Running locally on Port ${window.location.port || '3000'}`;
+      if (el.welcomeTagline) el.welcomeTagline.textContent = `A premium, glassmorphic chatbot running on your local machine. Choose a persona below and start conversing.`;
+    } else {
+      if (el.footerConnectionStatus) el.footerConnectionStatus.textContent = `Running on ${window.location.hostname}`;
+      if (el.welcomeTagline) el.welcomeTagline.textContent = `A premium, glassmorphic chatbot interface. Choose a persona below and start conversing.`;
+    }
+  }
 }
 
 function updatePersonaVisuals(personaKey) {
@@ -235,6 +295,7 @@ function setupEventListeners() {
   // Settings modal
   el.openSettingsBtn.addEventListener('click', () => {
     el.apiKeyInput.value = state.apiKey;
+    el.apiUrlInput.value = state.apiBaseUrl;
     el.settingsTemp.value = state.temperature;
     el.tempDisplay.textContent = state.temperature;
     el.settingsPersona.value = state.activePersona;
@@ -254,6 +315,7 @@ function setupEventListeners() {
 
   el.resetSettingsBtn.addEventListener('click', () => {
     el.apiKeyInput.value = '';
+    el.apiUrlInput.value = '';
     el.settingsTemp.value = '0.7';
     el.tempDisplay.textContent = '0.7';
     el.settingsPersona.value = 'aether';
@@ -330,7 +392,7 @@ function setupTextareaAutoGrow() {
 
 async function fetchConversations() {
   try {
-    const response = await fetch('/api/conversations');
+    const response = await fetch(getApiUrl('/api/conversations'));
     state.conversations = await response.json();
     renderConversationHistoryList();
   } catch (err) {
@@ -379,7 +441,7 @@ async function loadConversation(id) {
     state.activeConversationId = id;
     
     // Fetch details
-    const response = await fetch(`/api/conversations/${id}`);
+    const response = await fetch(getApiUrl(`/api/conversations/${id}`));
     const conversation = await response.json();
     
     state.messages = conversation.messages;
@@ -426,13 +488,13 @@ window.renameConversation = async (event, id) => {
 
   try {
     // Fetch detailed messages first to update
-    const res = await fetch(`/api/conversations/${id}`);
+    const res = await fetch(getApiUrl(`/api/conversations/${id}`));
     const details = await res.json();
     
     details.title = trimmed;
 
     // Save
-    await fetch('/api/conversations', {
+    await fetch(getApiUrl('/api/conversations'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(details)
@@ -452,7 +514,7 @@ window.deleteConversation = async (event, id) => {
   if (!confirm('Are you sure you want to delete this conversation?')) return;
 
   try {
-    await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+    await fetch(getApiUrl(`/api/conversations/${id}`), { method: 'DELETE' });
     await fetchConversations();
     
     if (state.activeConversationId === id) {
@@ -508,7 +570,7 @@ async function handleFormSubmit(e) {
 
   // 4. Send to Server API
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(getApiUrl('/api/chat'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -617,7 +679,7 @@ async function saveConversationState() {
     // Auto title using first user query truncated
     const title = state.messages[0]?.content?.substring(0, 30) + (state.messages[0]?.content?.length > 30 ? '...' : '') || 'New Chat';
     
-    await fetch('/api/conversations', {
+    await fetch(getApiUrl('/api/conversations'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -830,7 +892,7 @@ function exportConversationsHistory() {
   // Or fetch details for everything. Let's make an export from what is in state.conversations
   // Let's generate a JSON download of the conversation file from the server
   // Redirect to an API download endpoint, or fetch and download
-  fetch('/api/conversations')
+  fetch(getApiUrl('/api/conversations'))
     .then(res => res.json())
     .then(data => {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
