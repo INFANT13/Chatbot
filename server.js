@@ -278,7 +278,7 @@ app.post('/api/chat', async (req, res) => {
     }));
 
     // Use non-streaming generateContent for serverless compatibility
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${activeKey}`;
 
     const apiResponse = await fetch(geminiUrl, {
       method: 'POST',
@@ -299,7 +299,18 @@ app.post('/api/chat', async (req, res) => {
     if (!apiResponse.ok) {
       const errText = await apiResponse.text();
       console.error('Gemini API request failed:', errText);
-      res.write(`data: ${JSON.stringify({ error: `Gemini API Error: ${apiResponse.statusText}. ${errText}` })}\n\n`);
+      
+      // Show user-friendly error messages
+      let userMessage = `Gemini API Error: ${apiResponse.statusText}`;
+      if (apiResponse.status === 429) {
+        userMessage = 'Rate limit reached. The free-tier API quota has been exceeded. Please wait a minute and try again.';
+      } else if (apiResponse.status === 403) {
+        userMessage = 'API key is invalid or does not have permission. Please check your Gemini API key in Settings.';
+      } else if (apiResponse.status === 400) {
+        userMessage = 'Bad request. The message could not be processed by Gemini. Please try rephrasing your question.';
+      }
+      
+      res.write(`data: ${JSON.stringify({ error: userMessage })}\n\n`);
       res.write('data: [DONE]\n\n');
       res.end();
       return;
